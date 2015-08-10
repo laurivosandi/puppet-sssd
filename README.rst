@@ -27,6 +27,9 @@ Use following with Active Directory compliant domain controller:
 
 In this case the UID/GID numbers are generated algorithmically on the local machine
 and no manual insertion is necessary on domain controller.
+The home directories are created automatically,
+use ``mkhomedir = false`` to override, ``umask`` to set file creation mask
+and ``skel`` to specify alternative path for skeleton directory.
 Otherwise you can make use of ``uidNumber``, ``gidNumber``,
 ``unixHomeDirectory`` and other RFC2307bis attributes stored with in domain controller by
 specifying ``algorithmic_ids => false``.
@@ -60,15 +63,3 @@ Bear in mind that ``uidNumber`` greater than 2^32 will overflow on most machines
         bind_password => "change-me"
     }
 
-Creating home directories
--------------------------
-
-Use ``jlyheden/puppet-pam`` to create home directories:
-
-.. code:: puppet
-
-    class { "pam::mkhomedir":
-        ensure => present,
-        umask => "0022",
-        skel => "/home/default-user"
-    }

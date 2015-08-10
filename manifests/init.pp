@@ -70,11 +70,29 @@ class sssd(
   $domains = [$default_domain],
   $fallback_homedir = "/home/%u",
   $override_shell = "/bin/bash",
+  $mkhomedir = true,
+  $skel = undef,
+  $umask = undef,
 ) {
+  if $mkhomedir {
+    file { "/usr/share/pam-configs/mkhomedir":
+      ensure  => present,
+      owner   => "root",
+      group   => "root",
+      mode    => "0644",
+      content => template("sssd/mkhomedir.erb"),
+    }
+    ~>
+    Exec['pam_auth_update']
+  } else {
+    file { "/usr/share/pam-configs/mkhomedir": ensure  => absent }
+    ~>
+    Exec['pam_auth_update']
+  }
 
   Package["libpam-sss"]
   ~>
-  exec { "pam-auth-update":
+  exec { "pam_auth_update":
     command => "/usr/sbin/pam-auth-update",
     refreshonly => true
   }
