@@ -60,3 +60,15 @@ Bear in mind that ``uidNumber`` greater than 2^32 will overflow on most machines
         bind_password => "change-me"
     }
 
+Creating home directories
+-------------------------
+
+Use ``jlyheden/puppet-pam`` to create home directories:
+
+.. code:: puppet
+
+    class { "pam::mkhomedir":
+        ensure => present,
+        umask => "0022",
+        skel => "/home/default-user"
+    }

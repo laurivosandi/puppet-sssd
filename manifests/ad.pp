@@ -106,8 +106,6 @@ define sssd::ad(
 
     Package["openssh-server"]
     ->
-    Service["ssh"]
-    ->
     file_line { "sshd_config -> KerberosAuthentication":
         path => "/etc/ssh/sshd_config",
         match => "^KerberosAuthentication ",

@@ -71,6 +71,14 @@ class sssd(
   $fallback_homedir = "/home/%u",
   $override_shell = "/bin/bash",
 ) {
+
+  Package["libpam-sss"]
+  ~>
+  exec { "pam-auth-update":
+    command => "/usr/sbin/pam-auth-update",
+    refreshonly => true
+  }
+
   package { "sssd": ensure => installed } ->  
   package { "sssd-tools": ensure => installed } ->
   package { "libpam-sss": ensure => installed } ->
@@ -111,61 +119,6 @@ class sssd(
       path => "/etc/nsswitch.conf",
       match => "^netgroup:",
       line => "netgroup: compat"
-  }
-  ->
-  file { "/etc/pam.d/common-auth":
-      ensure => present,
-      mode => 644,
-      owner => root,
-      group => root,
-      content => template("sssd/pam.d/common-auth.erb")
-  }
-  ->
-  file { "/etc/pam.d/common-account":
-      ensure => present,
-      mode => 644,
-      owner => root,
-      group => root,
-      content => template("sssd/pam.d/common-account.erb")
-  }
-  ->
-  file { "/etc/pam.d/common-session":
-      ensure => present,
-      mode => 644,
-      owner => root,
-      group => root,
-      content => template("sssd/pam.d/common-session.erb")
-  }
-  ->
-  file { "/etc/pam.d/common-password":
-      ensure => present,
-      mode => 644,
-      owner => root,
-      group => root,
-      content => template("sssd/pam.d/common-password.erb")
-  }
-  ->
-  file { "/etc/pam.d/lightdm":
-      ensure => present,
-      mode => 644,
-      owner => root,
-      group => root,
-      content => template("sssd/pam.d/lightdm.erb")
-  }
-  ->
-  file { "/etc/lightdm":
-    ensure => directory,
-    mode => 755,
-    owner => root,
-    group => root,
-  }
-  ->
-  file { "/etc/lightdm/manual-login.conf":
-    ensure => present,
-    mode => 644,
-    owner => root,
-    group => root,
-    content => "[SeatDefaults]\ngreeter-show-manual-login=true\n"
   }
   ->
   service { "sssd":
@@ -248,6 +201,28 @@ class sssd(
     value => $default_domain
   }  
   
+
+  if defined(Package["lightdm"]) {
+    file { "/etc/lightdm/manual-login.conf":
+      ensure => present,
+      mode => 644,
+      owner => root,
+      group => root,
+      content => "[SeatDefaults]\ngreeter-show-manual-login=true\n"
+    }
+
+    # Fix Ubuntu 14.04 bugs
+    if $lsbdistcodename == "trusty" {
+      file { "/etc/pam.d/lightdm":
+        ensure => present,
+        mode => 0644,
+        owner => root,
+        group => root,
+        content => template("sssd/pam.d/lightdm.erb")
+      }
+    }
+  }
+
   # Reload SSSD after configuration change
   Ini_setting <| path == '/etc/sssd/sssd.conf' |>
   ~>
