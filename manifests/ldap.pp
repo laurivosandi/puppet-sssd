@@ -66,7 +66,7 @@ define sssd::ldap(
   }
 
   # LDAP URI
-  ini_setting { "sssd.conf -> domain/$title -> ldap_uri = $uri":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_uri":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -75,7 +75,7 @@ define sssd::ldap(
   }
 
   # Search base
-  ini_setting { "sssd.conf -> domain/$title -> ldap_search_base = $base_dn":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_search_base":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -85,7 +85,7 @@ define sssd::ldap(
 
 
   # TLS CA certficate path
-  ini_setting { "sssd.conf -> domain/$title -> ldap_tls_cacert = $cacert_file":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_tls_cacert":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -94,7 +94,7 @@ define sssd::ldap(
   }
 
   # LDAP schema
-  ini_setting { "sssd.conf -> domain/$title -> ldap_schema = rfc2307":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_schema":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -103,7 +103,7 @@ define sssd::ldap(
   }
 
   # Force StartTLS for 389 if true
-  ini_setting { "sssd.conf -> domain/$title -> ldap_id_use_start_tls = $force_tls":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_id_use_start_tls":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -112,7 +112,7 @@ define sssd::ldap(
   }
 
   # Bind account settings
-  ini_setting { "sssd.conf -> domain/$title -> ldap-default-bind-dn=$bind_dn":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_default_bind_dn":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -120,7 +120,7 @@ define sssd::ldap(
     value => "$bind_dn"
   }
 
-  ini_setting { "sssd.conf -> domain/$title -> ldap_default_bind_password = $bind_password":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_default_bind_password":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -128,7 +128,7 @@ define sssd::ldap(
     value => "$bind_password"
   }
 
-  ini_setting { "sssd.conf -> domain/$title -> ldap_default_bind_dn = $bind_dn":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_default_bind_dn":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",

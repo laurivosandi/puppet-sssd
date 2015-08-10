@@ -10,7 +10,7 @@ define sssd::domain(
   $ldap_id_mapping = true
 ) {
 
-  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> dns_update = $dyndns_update":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> dns_update":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -18,7 +18,7 @@ define sssd::domain(
     value => "$dyndns_update"
   }
 
-  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> cache_credentials = $cache_credentials":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> cache_credentials":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -27,7 +27,7 @@ define sssd::domain(
   }
 
   # LDAP IP mapping
-  ini_setting { "sssd.conf -> domain/$title -> ldap_id_mapping = $id_mapping":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_id_mapping":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -36,21 +36,21 @@ define sssd::domain(
   }
 
   if ($ldap_id_mapping) {
-    ini_setting { "sssd.conf -> domain/$title -> ldap_idmap_range_min = absent":
+    ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_idmap_range_min":
       ensure => absent,
       path => "/etc/sssd/sssd.conf",
       section => "domain/$title",
       setting => "ldap_idmap_range_min",
     }
 
-    ini_setting { "sssd.conf -> domain/$title -> ldap_idmap_range_max = absent":
+    ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_idmap_range_max":
       ensure => absent,
       path => "/etc/sssd/sssd.conf",
       section => "domain/$title",
       setting => "ldap_idmap_range_max",
     }
   } else {
-    ini_setting { "sssd.conf -> domain/$title -> ldap_idmap_range_min = 5000":
+    ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_idmap_range_min":
       ensure => present,
       path => "/etc/sssd/sssd.conf",
       section => "domain/$title",
@@ -58,7 +58,7 @@ define sssd::domain(
       value => 5000
     }
 
-    ini_setting { "sssd.conf -> domain/$title -> ldap_idmap_range_max = 2000000000":
+    ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_idmap_range_max":
       ensure => present,
       path => "/etc/sssd/sssd.conf",
       section => "domain/$title",
@@ -67,7 +67,7 @@ define sssd::domain(
     }
   }
 
-  ini_setting { "sssd-conf-domain-$title-id-provider":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> id_provider":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -75,7 +75,7 @@ define sssd::domain(
     value => "$id_provider"
   }
 
-  ini_setting { "sssd-conf-domain-$title-auth-provider":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> auth_provider":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -83,7 +83,7 @@ define sssd::domain(
     value => "$auth_provider"
   }
 
-  ini_setting { "sssd-conf-domain-$title-chpass-provider":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> chpass_provider":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -91,7 +91,7 @@ define sssd::domain(
     value => "$chpass_provider"
   }
 
-  ini_setting { "sssd-conf-domain-$title-access-provider":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> access_provider":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -99,7 +99,7 @@ define sssd::domain(
     value => $access_provider
   }
 
-  ini_setting { "sssd-conf-domain-$title-sudo-provider":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> sudo_provider":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
@@ -107,7 +107,7 @@ define sssd::domain(
     value => $sudo_provider
   }
 
-  ini_setting { "sssd-conf-domain-$title-autofs-provider":
+  ini_setting { "/etc/sssd/sssd.conf -> domain-$title -> autofs_provider":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",

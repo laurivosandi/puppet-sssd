@@ -24,8 +24,38 @@
 # === Examples
 #
 #  class { sssd:
-#    servers => [ 'pool.ntp.org', 'ntp.local.company.com' ],
+#    default_domain => "example.org"
 #  }
+#
+#  sssd::ad { "example.org":
+#    workgroup => "EXAMPLE",
+#  }
+#
+#  OR with more parameters specified
+#
+#  class { sssd:
+#    default_domain => "apple.org",
+#    domains => ["apple.org", "banana.org"],
+#    fallback_homedir => "/home/%d/%u",
+#    override_shell => "/bin/bash",
+#  }
+#
+#  sssd::ad { "apple.org":
+#    workgroup => "APPLE",
+#    netbios_name => "EMPLOYEE1",
+#    join_username => "joiner",
+#    join_password => "verysecure",
+#    algorithmic_ids => false
+#  }
+#
+#  sssd::ldap { "banana.org":
+#    cacert_file => "/etc/ssl/certs/ldap-ca.pem",
+#    uri => "ldap://ldap.banana.org",
+#    search_base => "cn=users,dc=banana,dc=org",
+#    bind_dn => "userid=sssd,dc=banana,dc=org",
+#    bind_password => "verysecure"
+#  }
+
 #
 # === Authors
 #
@@ -33,7 +63,7 @@
 #
 # === Copyright
 #
-# Copyright 2015 Your name here, unless otherwise noted.
+# Copyright 2015 Lauri Võsandi, unless otherwise noted.
 #
 class sssd(
   $default_domain,
@@ -169,7 +199,7 @@ class sssd(
   }
 
   # Set available domains
-  ini_setting { "sssd.conf -> [sssd] -> domains = $domains":
+  ini_setting { "/etc/sssd/sssd.conf -> sssd -> domains":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "sssd",
@@ -177,7 +207,7 @@ class sssd(
     value => join($domains, ",")
   }
 
-  ini_setting { "sssd.conf -> [sssd] -> services = nss, pam":
+  ini_setting { "/etc/sssd/sssd.conf -> sssd -> services":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "sssd",
@@ -186,7 +216,7 @@ class sssd(
   }
   
   
-  ini_setting { "sssd.conf -> [sssd] -> config_file_version = 2":
+  ini_setting { "/etc/sssd/sssd.conf -> sssd -> config_file_version":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "sssd",
@@ -194,7 +224,7 @@ class sssd(
     value => 2
   }
 
-  ini_setting { "sssd.conf -> [nss] -> fallback_homedir = $fallback_homedir":
+  ini_setting { "/etc/sssd/sssd.conf -> nss -> fallback_homedir":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "nss",
@@ -202,7 +232,7 @@ class sssd(
     value => $fallback_homedir
   }
 
-  ini_setting { "sssd.conf -> [nss] -> override_shell = $override_shell":
+  ini_setting { "/etc/sssd/sssd.conf -> nss -> override_shell":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "nss",
@@ -210,7 +240,7 @@ class sssd(
     value => $override_shell
   }  
   
-  ini_setting { "sssd.conf -> [sssd] -> default_domain = $default_domain":
+  ini_setting { "/etc/sssd/sssd.conf -> sssd -> default_domain":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "sssd",
