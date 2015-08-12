@@ -6,6 +6,13 @@ Introduction
 
 This is Puppet module for installing and configuring SSSD
 including domain join for Ubuntu and Debian machines.
+This module is suggested for workstations and laptops.
+Caching of passwords and home directory creation is enabled by default.
+For Kerberos enabled domains Chromium SPNEGO is enabled by default
+and it's possible to enable Kerberos for OpenSSH server as well.
+There are some issues with Samba4 based domain controllers -
+password chaning may not work as expected.
+See `winbind <https://github.com/laurivosandi/puppet-winbind>`_ module instead.
 
 
 Usage with AD
@@ -27,9 +34,6 @@ Use following with Active Directory compliant domain controller:
 
 In this case the UID/GID numbers are generated algorithmically on the local machine
 and no manual insertion is necessary on domain controller.
-The home directories are created automatically,
-use ``mkhomedir = false`` to override, ``umask`` to set file creation mask
-and ``skel`` to specify alternative path for skeleton directory.
 Otherwise you can make use of ``uidNumber``, ``gidNumber``,
 ``unixHomeDirectory`` and other RFC2307bis attributes stored with in domain controller by
 specifying ``algorithmic_ids => false``.
@@ -37,7 +41,9 @@ In case the hostname is longer than 15 characters the join fails, as NetBIOS nam
 is derived from hostname, use ``netbios_name => "SHORTERNAME"`` to override.
 The ``join_username`` and ``join_password`` parameters may be omitted,
 in which case manual ``net ads join`` is necessary to complete the domain join.
-
+The home directories are created automatically,
+use ``mkhomedir = false`` to override, ``umask`` to set file creation mask
+and ``skel`` to specify alternative path for skeleton directory.
 
 Usage with OpenLDAP
 -------------------
