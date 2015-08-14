@@ -3,7 +3,8 @@ define sssd::ad(
   $workgroup = "WORKGROUP",
   $algorithmic_ids = true,
   $netbios_name = upcase($hostname),
-  $spnego_whitelist = "*.$title",
+  $spnego_whitelist = ".$title",
+  $delegation_whitelist = $spnego_whitelist,
   $kerberize_openssh = false,
   $join_username = undef,
   $join_password = undef
@@ -153,7 +154,27 @@ define sssd::ad(
       mode => 755,
       owner => root,
       group => root,
-      content => "{\n  \"AuthServerWhitelist\":\"$spnego_whitelist\",\n  \"AuthNegotiateDelegateWhitelist\":\"$spnego_whitelist\"\n}\n"
+      content => "{\n  \"AuthServerWhitelist\":\"$spnego_whitelist\",\n  \"AuthNegotiateDelegateWhitelist\":\"$delegation_whitelist\"\n}\n"
+    }
+  }
+
+  if defined(Package["firefox"]) or defined(Package["iceweasel"]) {
+    file_line { "firefox-negotiate-auth-trusted-uris":
+      path => "/etc/firefox/syspref.js",
+      match => "^pref\(\"network\.negotiate\-auth\.trusted\-uris\"\,",
+      line => "pref(\"network.negotiate-auth.trusted-uris\", \"$spnego_whitelist\");";
+    }
+
+    file_line { "firefox-negotiate-auth-delegation-uris":
+      path => "/etc/firefox/syspref.js",
+      match => "^pref\(\"network\.negotiate\-auth\.delegation\-uris\"\,",
+      line => "pref(\"network.negotiate-auth.delegation-uris\", \"$delegation_whitelist\");";
+    }
+
+    file_line { "firefox-negotiate-auth-using-native-gsslib":
+      path => "/etc/firefox/syspref.js",
+      match => "^pref\(\"network\.negotiate\-auth\.using\-native\-gsslib\"\,",
+      line => "pref(\"network.negotiate-auth.using-native-gsslib\", true);";
     }
   }
 }
