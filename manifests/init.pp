@@ -72,7 +72,7 @@ class sssd(
   $override_shell = "/bin/bash",
   $mkhomedir = true,
   $skel = undef,
-  $umask = undef
+  $umask = "0077"
 ) {
   if $mkhomedir {
     file { "/usr/share/pam-configs/mkhomedir":
@@ -113,7 +113,6 @@ class sssd(
   package { "libpam-sss": ensure => installed, notify => Exec['pam_auth_update'] }
   package { "libnss-sss": ensure => installed }
   package { "libsss-sudo": ensure => installed }
-  package { "sudo": ensure => installed }
   package { "krb5-user": ensure => installed }
   package { "kstart": ensure => installed }
   package { "libsasl2-modules-gssapi-heimdal": ensure => installed }
