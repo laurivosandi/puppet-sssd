@@ -33,7 +33,7 @@ define sssd::ldap(
   $cacert_file,
   $bind_dn,
   $bind_password,
-  $base_dn = inline_template("<%= scope.lookupvar('title').split('.').map{|j| 'dc='+j}.join(',') %>"),
+  $search_base = inline_template("<%= scope.lookupvar('title').split('.').map{|j| 'dc='+j}.join(',') %>"),
   $force_tls = true,
   $uri = "ldapi:///",
   $algorithmic_ids = true
@@ -80,7 +80,7 @@ define sssd::ldap(
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",
     setting => "ldap_search_base",
-    value => "$base_dn"
+    value => "$search_base"
   }
 
 
@@ -128,7 +128,7 @@ define sssd::ldap(
     value => "$bind_password"
   }
 
-  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_default_bind_dn":
+  ini_setting { "/etc/sssd/sssd.conf -> domain/$title -> ldap_default_authtok_type":
     ensure => present,
     path => "/etc/sssd/sssd.conf",
     section => "domain/$title",

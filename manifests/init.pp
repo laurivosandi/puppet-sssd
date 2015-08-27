@@ -72,7 +72,7 @@ class sssd(
   $override_shell = "/bin/bash",
   $mkhomedir = true,
   $skel = undef,
-  $umask = undef,
+  $umask = undef
 ) {
   if $mkhomedir {
     file { "/usr/share/pam-configs/mkhomedir":
@@ -90,77 +90,82 @@ class sssd(
     Exec['pam_auth_update']
   }
 
-  Package["libpam-sss"]
-  ~>
+
+  # Ensure winbind service is running
+  package { "samba-common": ensure => installed }
+  ->
+  Ini_setting <| path == '/etc/samba/smb.conf' |>
+
+  # Ensure nsswitch is updated after PAM config is set
+  Exec["pam_auth_update"]
+  ->
+  File_line <| path == "/etc/nsswitch.conf" |>
+
+
+  # Update PAM config
   exec { "pam_auth_update":
     command => "/usr/sbin/pam-auth-update",
     refreshonly => true
   }
 
-  package { "sssd": ensure => installed } ->  
-  package { "sssd-tools": ensure => installed } ->
-  package { "libpam-sss": ensure => installed } ->
-  package { "libnss-sss": ensure => installed } ->
-  package { "libsss-sudo": ensure => installed } ->
-  package { "sudo": ensure => installed } ->
-  package { "krb5-user": ensure => installed } ->
-  package { "kstart": ensure => installed } ->
-
-  package { "accountsservice": ensure => installed } ->
-  package { "libpam-cap": ensure => installed } ->
-  package { "libpam-gnome-keyring": ensure => installed } ->
-  package { "libpam-ck-connector": ensure => installed } ->
-  package { "libpam-systemd": ensure => installed } ->
-  package { "libsasl2-modules-gssapi-heimdal": ensure => installed } ->
-  package { "libpam-pwquality": ensure => installed } ->
+  package { "sssd": ensure => installed }
+  package { "sssd-tools": ensure => installed }
+  package { "libpam-sss": ensure => installed, notify => Exec['pam_auth_update'] }
+  package { "libnss-sss": ensure => installed }
+  package { "libsss-sudo": ensure => installed }
+  package { "sudo": ensure => installed }
+  package { "krb5-user": ensure => installed }
+  package { "kstart": ensure => installed }
+  package { "libsasl2-modules-gssapi-heimdal": ensure => installed }
   package { "libsasl2-modules-ldap": ensure => installed }
-  ->
+  package { "libpam-winbind": ensure => absent, notify => Exec['pam_auth_update'] }
+  package { "libnss-winbind": ensure => absent }
+
+  # Remove legacy
+  file { "/etc/pam_ldap.conf": ensure => absent } ->
+  file { '/etc/libnss-ldap.conf': ensure => absent }
+
+  package { "libpam-python": ensure => absent, notify => Exec['pam_auth_update']  }
+  package { "libpam-mklocaluser": ensure => absent, notify => Exec['pam_auth_update']  }
+  package { "libpam-ccreds": ensure => absent, notify => Exec['pam_auth_update']  }
+  package { "nsscache": ensure => absent }
+  package { "libnss-db": ensure => absent }
+  package { "libnss-cache": ensure => absent }
+  package { "libpam-ldapd": ensure => absent, notify => Exec['pam_auth_update']  }
+  package { "libnss-ldapd": ensure => absent }
+  package { "nslcd": ensure => absent }
+  package { "nscd": ensure => absent }
+  package { "libpam-ldap": ensure => absent, notify => Exec['pam_auth_update'] }
+  package { "libnss-ldap": ensure => absent }
+
   file_line { "nsswitch-passwd":
       path => "/etc/nsswitch.conf",
       match => "^passwd:",
       line => "passwd: compat sss"
   }
-  ->
+
   file_line { "nsswitch-group":
       path => "/etc/nsswitch.conf",
       match => "^group:",
       line => "group: compat sss"
   }
-  ->
+
   file_line { "nsswitch-shadow":
       path => "/etc/nsswitch.conf",
       match => "^shadow:",
       line => "shadow: compat sss"
   }
-  ->
+
   file_line { "nsswitch-netgroup":
       path => "/etc/nsswitch.conf",
       match => "^netgroup:",
       line => "netgroup: compat"
   }
-  ->
+
   service { "sssd":
     ensure => running,
     enable => true
   }
-  ->
-  # Remove legacy
-  file { "/etc/pam_ldap.conf": ensure => absent } ->
-  file { "/etc/ldap.conf": ensure => absent } ->
-  file { '/etc/libnss-ldap.conf': ensure => absent }
-  ->
-  package { "libpam-python": ensure => purged } ->
-  package { "libpam-mklocaluser": ensure => purged } ->
-  package { "libpam-ccreds": ensure => purged } ->
-  package { "nsscache": ensure => purged } ->
-  package { "libnss-db": ensure => purged } ->
-  package { "libnss-cache": ensure => purged } ->
-  package { "libpam-ldapd": ensure => purged } ->
-  package { "libnss-ldapd": ensure => purged } ->
-  package { "nslcd": ensure => purged } ->
-  package { "nscd": ensure => purged } ->
-  package { "libpam-ldap": ensure => purged } ->
-  package { "libnss-ldap": ensure => purged }
   
   file { "/etc/sssd/sssd.conf":
     ensure => present,
