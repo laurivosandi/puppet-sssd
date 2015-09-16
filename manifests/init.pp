@@ -66,7 +66,7 @@
 # Copyright 2015 Lauri Võsandi, unless otherwise noted.
 #
 class sssd(
-  $default_domain,
+  $default_domain = undef,
   $domains = [$default_domain],
   $fallback_homedir = "/home/%u",
   $override_shell = "/bin/bash",
@@ -91,7 +91,7 @@ class sssd(
   }
 
 
-  # Ensure winbind service is running
+  # Ensure Samba utils are installed
   package { "samba-common": ensure => installed }
   ->
   Ini_setting <| path == '/etc/samba/smb.conf' |>
@@ -100,7 +100,6 @@ class sssd(
   Exec["pam_auth_update"]
   ->
   File_line <| path == "/etc/nsswitch.conf" |>
-
 
   # Update PAM config
   exec { "pam_auth_update":
@@ -119,6 +118,7 @@ class sssd(
   package { "libsasl2-modules-ldap": ensure => installed }
   package { "libpam-winbind": ensure => absent, notify => Exec['pam_auth_update'] }
   package { "libnss-winbind": ensure => absent }
+  package { "cracklib-runtime": ensure => absent }
 
   # Remove legacy
   file { "/etc/pam_ldap.conf": ensure => absent } ->
@@ -137,92 +137,115 @@ class sssd(
   package { "libpam-ldap": ensure => absent, notify => Exec['pam_auth_update'] }
   package { "libnss-ldap": ensure => absent }
 
-  file_line { "nsswitch-passwd":
+  if $default_domain {
+    # Reload SSSD after configuration change
+    Ini_setting <| path == '/etc/sssd/sssd.conf' |>
+    ~>
+    Service["sssd"]
+
+    file { "/etc/sssd/sssd.conf":
+      ensure => present,
+      mode => 600,
+      owner => root,
+      group => root,
+    }
+
+    # Set available domains
+    ini_setting { "/etc/sssd/sssd.conf -> sssd -> domains":
+      ensure => present,
+      path => "/etc/sssd/sssd.conf",
+      section => "sssd",
+      setting => "domains",
+      value => join($domains, ",")
+    }
+
+    ini_setting { "/etc/sssd/sssd.conf -> sssd -> services":
+      ensure => present,
+      path => "/etc/sssd/sssd.conf",
+      section => "sssd",
+      setting => "services",
+      value => "nss, pam"
+    }
+
+    ini_setting { "/etc/sssd/sssd.conf -> sssd -> config_file_version":
+      ensure => present,
+      path => "/etc/sssd/sssd.conf",
+      section => "sssd",
+      setting => "config_file_version",
+      value => 2
+    }
+
+    ini_setting { "/etc/sssd/sssd.conf -> nss -> fallback_homedir":
+      ensure => present,
+      path => "/etc/sssd/sssd.conf",
+      section => "nss",
+      setting => "fallback_homedir",
+      value => $fallback_homedir
+    }
+
+    ini_setting { "/etc/sssd/sssd.conf -> nss -> override_shell":
+      ensure => present,
+      path => "/etc/sssd/sssd.conf",
+      section => "nss",
+      setting => "override_shell",
+      value => $override_shell
+    }
+
+    ini_setting { "/etc/sssd/sssd.conf -> sssd -> default_domain":
+      ensure => present,
+      path => "/etc/sssd/sssd.conf",
+      section => "sssd",
+      setting => "default_domain",
+      value => $default_domain
+    }
+
+    file_line { "nsswitch-passwd":
       path => "/etc/nsswitch.conf",
       match => "^passwd:",
       line => "passwd: compat sss"
-  }
+    }
 
-  file_line { "nsswitch-group":
+    file_line { "nsswitch-group":
       path => "/etc/nsswitch.conf",
       match => "^group:",
       line => "group: compat sss"
-  }
+    }
 
-  file_line { "nsswitch-shadow":
+    file_line { "nsswitch-shadow":
       path => "/etc/nsswitch.conf",
       match => "^shadow:",
       line => "shadow: compat sss"
-  }
+    }
 
-  file_line { "nsswitch-netgroup":
+    file_line { "nsswitch-netgroup":
       path => "/etc/nsswitch.conf",
       match => "^netgroup:",
       line => "netgroup: compat"
+    }
+
+    service { "sssd":
+      ensure => running,
+      enable => true
+    }
   }
 
-  service { "sssd":
-    ensure => running,
-    enable => true
-  }
-  
-  file { "/etc/sssd/sssd.conf":
+  file { "/etc/security/group.conf":
     ensure => present,
-    mode => 600,
+    mode => 644,
     owner => root,
     group => root,
   }
-
-  # Set available domains
-  ini_setting { "/etc/sssd/sssd.conf -> sssd -> domains":
-    ensure => present,
-    path => "/etc/sssd/sssd.conf",
-    section => "sssd",
-    setting => "domains",
-    value => join($domains, ",")
+  ->
+  file { "/usr/share/pam-configs/groups":
+    ensure  => present,
+    owner   => "root",
+    group   => "root",
+    mode    => "0644",
+    content => template("sssd/groups.erb"),
   }
+  ~>
+  Exec['pam_auth_update']
 
-  ini_setting { "/etc/sssd/sssd.conf -> sssd -> services":
-    ensure => present,
-    path => "/etc/sssd/sssd.conf",
-    section => "sssd",
-    setting => "services",
-    value => "nss, pam"
-  }
-  
-  
-  ini_setting { "/etc/sssd/sssd.conf -> sssd -> config_file_version":
-    ensure => present,
-    path => "/etc/sssd/sssd.conf",
-    section => "sssd",
-    setting => "config_file_version",
-    value => 2
-  }
-
-  ini_setting { "/etc/sssd/sssd.conf -> nss -> fallback_homedir":
-    ensure => present,
-    path => "/etc/sssd/sssd.conf",
-    section => "nss",
-    setting => "fallback_homedir",
-    value => $fallback_homedir
-  }
-
-  ini_setting { "/etc/sssd/sssd.conf -> nss -> override_shell":
-    ensure => present,
-    path => "/etc/sssd/sssd.conf",
-    section => "nss",
-    setting => "override_shell",
-    value => $override_shell
-  }  
-  
-  ini_setting { "/etc/sssd/sssd.conf -> sssd -> default_domain":
-    ensure => present,
-    path => "/etc/sssd/sssd.conf",
-    section => "sssd",
-    setting => "default_domain",
-    value => $default_domain
-  }  
-  
 
   if defined(Package["lightdm"]) {
     file { "/etc/lightdm/manual-login.conf":
@@ -244,11 +267,5 @@ class sssd(
       }
     }
   }
-
-  # Reload SSSD after configuration change
-  Ini_setting <| path == '/etc/sssd/sssd.conf' |>
-  ~>
-  Service["sssd"]
-
 
 }
