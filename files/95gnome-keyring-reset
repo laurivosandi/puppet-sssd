@@ -1,0 +1,25 @@
+# This file is sourced by Xsession(5), not executed.
+
+# GNOME keyring concept works well with local accounts, but it fails miserably with
+# centrally managed authentication because keyring contents are encrypted
+# with password that could be changed outside the machine. Hence,
+# we create the keyring without encryption to avoid fuss.
+# This makes things less secure of course.
+
+if [ -f $HOME/.local/share/keyrings/user.keystore ] || [ ! -f $HOME/.local/share/keyrings/login.keyring ]; then
+
+# Remove keyrings if it seems to be encrypted (presence of user.keystore)
+# or no keyring has been created yet (presence of login.keyring)
+rm -f $HOME/.local/share/keyrings/*
+
+mkdir -p $HOME/.local/share/keyrings/
+
+cat>$HOME/.local/share/keyrings/login.keyring<<EOF
+[keyring]
+display-name=login
+lock-on-idle=false
+lock-after=false
+EOF
+
+fi
+

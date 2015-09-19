@@ -118,7 +118,9 @@ class sssd(
   package { "libsasl2-modules-ldap": ensure => installed }
   package { "libpam-winbind": ensure => absent, notify => Exec['pam_auth_update'] }
   package { "libnss-winbind": ensure => absent }
-  package { "cracklib-runtime": ensure => absent }
+
+  # Install cracklib database, otherwise changing password of local accounts is not possible
+  package { "cracklib-runtime": ensure => present }
 
   # Remove legacy
   file { "/etc/pam_ldap.conf": ensure => absent } ->
@@ -136,6 +138,20 @@ class sssd(
   package { "nscd": ensure => absent }
   package { "libpam-ldap": ensure => absent, notify => Exec['pam_auth_update'] }
   package { "libnss-ldap": ensure => absent }
+
+  # Remove GNOME keyring PAM module, with central authentication it becomes unusable for end users
+  package { "libpam-gnome-keyring":
+    ensure => absent,
+    notify => Exec['pam_auth_update']
+  }
+  ->
+  file { '/etc/X11/Xsession.d/95gnome-keyring-reset':
+    ensure => present,
+    mode => 755,
+    owner => root,
+    group => root,
+    source => "puppet:///modules/sssd/95gnome-keyring-reset"
+  }
 
   if $default_domain {
     # Reload SSSD after configuration change
@@ -241,31 +257,27 @@ class sssd(
     owner   => "root",
     group   => "root",
     mode    => "0644",
-    content => template("sssd/groups.erb"),
+    source => "puppet:///modules/sssd/groups"
   }
   ~>
   Exec['pam_auth_update']
 
-
-  if defined(Package["lightdm"]) {
-    file { "/etc/lightdm/manual-login.conf":
-      ensure => present,
-      mode => 644,
-      owner => root,
-      group => root,
-      content => "[SeatDefaults]\ngreeter-show-manual-login=true\n"
-    }
-
-    # Fix Ubuntu 14.04 bugs
-    if $lsbdistcodename == "trusty" {
-      file { "/etc/pam.d/lightdm":
-        ensure => present,
-        mode => 0644,
-        owner => root,
-        group => root,
-        content => template("sssd/pam.d/lightdm.erb")
-      }
-    }
+  file { "/etc/lightdm/manual-login.conf":
+    ensure => present,
+    mode => 644,
+    owner => root,
+    group => root,
+    content => "[SeatDefaults]\ngreeter-show-manual-login=true\n"
   }
 
+  # Fix Ubuntu 14.04 bugs
+  if $lsbdistcodename == "trusty" {
+    file { "/etc/pam.d/lightdm":
+      ensure => present,
+      mode => 0644,
+      owner => root,
+      group => root,
+      source => "puppet:///modules/sssd/lightdm"
+    }
+  }
 }
